@@ -1,10 +1,10 @@
 ---
-title: 初めての記事
+title: 初めての記事になります。
 author: Hayato
 pubDatetime: 2026-06-03T02:49:19.166Z
 featured: true
 draft: false
-tags: 
+tags:
     - 学習ログ
     - astro
     - サンプル
@@ -17,7 +17,5 @@ description: メディアを構築した最初のポスト
 
 ## h2から書き始める。"Table of contents"に目次が表示されている。
 
-
-
-
+こんちは。
 

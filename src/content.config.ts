@@ -34,4 +34,13 @@ const pages = defineCollection({
   }),
 });
 
-export const collections = { posts, pages };
+const notes = defineCollection({
+  loader: glob({pattern: "**/*.md", base: "./src/content/notes"}),
+  schema: z.object({
+    pubDatetime: z.date(),
+    tags: z.array(z.string()).optional().default([]),
+    draft: z.boolean().optional(),
+  }),
+});
+
+export const collections = { posts, pages, notes };

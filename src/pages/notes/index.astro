@@ -1,0 +1,126 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import config from "@/config";
+
+const allNotes = await getCollection("notes", ({ data }) => !data.draft);
+
+const sortedNotes = allNotes.sort(
+  (a, b) => b.data.pubDatetime.getTime() - a.data.pubDatetime.getTime()
+);
+
+const renderedNotes = await Promise.all(
+  sortedNotes.map(async note => {
+    const { Content } = await render(note);
+    return { note, Content };
+  })
+);
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString(config.site.lang, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString(config.site.lang, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// Group notes by date string for date separators
+function getDateKey(date: Date): string {
+  return date.toLocaleDateString(config.site.lang, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+---
+
+<Layout
+  title={`Notes — ${config.site.title}`}
+  description="日々の短い思考・メモのタイムライン"
+>
+  <Header />
+  <main id="main-content" class="app-layout">
+    <section class="pt-8 pb-16">
+      <!-- Page header -->
+      <div class="border-border mb-10 border-b pb-6">
+        <h1 class="text-3xl font-bold">Notes</h1>
+        <p class="text-muted-foreground mt-1 text-sm">
+          日々の短い思考・気づきのタイムライン
+        </p>
+      </div>
+
+      {
+        renderedNotes.length === 0 ? (
+          <p class="text-muted-foreground py-16 text-center text-sm">
+            まだノートがありません。
+          </p>
+        ) : (
+          <div class="relative">
+            {renderedNotes.map(({ note, Content }, index) => {
+              const { data } = note;
+              const currentDateKey = getDateKey(data.pubDatetime);
+              const prevDateKey =
+                index > 0
+                  ? getDateKey(
+                      renderedNotes[index - 1].note.data.pubDatetime
+                    )
+                  : null;
+              const showDateSeparator = currentDateKey !== prevDateKey;
+
+              return (
+                <>
+                  {showDateSeparator && (
+                    <div class="mb-6 flex items-center gap-3">
+                      <span class="bg-accent/10 text-accent rounded-full px-3 py-1 text-xs font-semibold tracking-wide">
+                        {currentDateKey}
+                      </span>
+                      <div class="border-border h-px flex-1 border-t border-dashed" />
+                    </div>
+                  )}
+
+                  <article class="group mb-8">
+                    <div class="border-border hover:border-accent/40 rounded-2xl border bg-transparent px-5 py-4 transition-colors duration-200">
+                      <!-- Time -->
+                      <time
+                        datetime={data.pubDatetime.toISOString()}
+                        class="text-muted-foreground mb-3 block text-xs tabular-nums"
+                      >
+                        {formatTime(data.pubDatetime)}
+                      </time>
+
+                      <!-- Content -->
+                      <div class="prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-p:my-0 max-w-none">
+                        <Content />
+                      </div>
+
+                      <!-- Tags -->
+                      {data.tags && data.tags.length > 0 && (
+                        <div class="mt-4 flex flex-wrap gap-1.5">
+                          {data.tags.map(tag => (
+                            <span class="bg-muted text-muted-foreground rounded-full px-2.5 py-0.5 text-xs">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                </>
+              );
+            })}
+          </div>
+        )
+      }
+    </section>
+  </main>
+  <Footer />
+</Layout>
